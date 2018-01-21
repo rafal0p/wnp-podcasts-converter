@@ -18,14 +18,15 @@ var getPodcast = (number, cb) => {
             var pressreleaseHtml = html(pressrelease)
                 .replace(/&nbsp;/g, " ");
             new Epub({
-                title: "someebook",
+                title: "WNP " + number,
+                author: "Michał Szafrański",
                 content: [
                     {
-                        title: "sometitle",
+                        title: "Treść podcastu",
                         data: pressreleaseHtml
                     }
                 ]
-            }, "./some.epub");
+            }, "./wnp" + number + ".epub");
             cb(pressreleaseHtml);
         }
     )
