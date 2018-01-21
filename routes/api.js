@@ -3,6 +3,7 @@ var request = require('request');
 var htmlparser = require('htmlparser');
 var select = require('soupselect').select;
 var html = require('htmlparser-to-html');
+var Epub = require("epub-gen");
 var router = express.Router();
 
 var getPodcast = (number, cb) => {
@@ -13,7 +14,19 @@ var getPodcast = (number, cb) => {
             var parser = new htmlparser.Parser(handler);
             parser.parseComplete(body);
             var pressrelease = select(handler.dom, 'div.pressrelease-content');
-            cb(html(pressrelease));
+            pressrelease[0].attribs.style = ""; // remove display: none
+            var pressreleaseHtml = html(pressrelease)
+                .replace(/&nbsp;/g, " ");
+            new Epub({
+                title: "someebook",
+                content: [
+                    {
+                        title: "sometitle",
+                        data: pressreleaseHtml
+                    }
+                ]
+            }, "./some.epub");
+            cb(pressreleaseHtml);
         }
     )
 };
