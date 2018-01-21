@@ -10,9 +10,12 @@
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.9",
     "express": "~4.15.5",
+    "htmlparser": "^1.7.7",
+    "htmlparser-to-html": "0.0.6",
     "jade": "~1.11.0",
     "morgan": "~1.9.0",
     "request": "^2.83.0",
-    "serve-favicon": "~2.4.5"
+    "serve-favicon": "~2.4.5",
+    "soupselect": "^0.2.0"
   }
 }
