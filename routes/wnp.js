@@ -16,24 +16,28 @@ var getPodcast = (number, cb) => {
             var parser = new htmlparser.Parser(handler);
             parser.parseComplete(body);
             var pressrelease = select(handler.dom, 'div.pressrelease-content');
-            pressrelease[0].attribs.style = ""; // remove display: none
-            var pressreleaseHtml = html(pressrelease)
-                .replace(/&nbsp;/g, " ");
-            var epub = new Epub({
-                title: "WNP " + number,
-                author: "Michał Szafrański",
-                content: [
-                    {
-                        title: "Treść podcastu",
-                        data: pressreleaseHtml
-                    }
-                ]
-            }, "./wnp" + number + ".epub");
-            epub.promise.then(() => {
-                cb(pressreleaseHtml);
-            }, (err) => {
-                console.log(err);
-            })
+            if (pressrelease.length == 0) {
+                cb({ err: 'No pressrelease.' });
+            } else {
+                pressrelease[0].attribs.style = ""; // remove display: none
+                var pressreleaseHtml = html(pressrelease)
+                    .replace(/&nbsp;/g, " ");
+                var epub = new Epub({
+                    title: "WNP " + number,
+                    author: "Michał Szafrański",
+                    content: [
+                        {
+                            title: "Treść podcastu",
+                            data: pressreleaseHtml
+                        }
+                    ]
+                }, "./wnp" + number + ".epub");
+                epub.promise.then(() => {
+                    cb(null);
+                }, (err) => {
+                    console.log(err);
+                })
+            }
         }
     )
 };
@@ -43,7 +47,7 @@ var validatePodcast = (number, cb) => {
     if (isValid) {
         cb();
     } else {
-        cb({ err: 'invalid podcast number' });
+        cb({ err: 'Invalid podcast number.' });
     }
 }
 
@@ -58,10 +62,14 @@ router.get('/:number', (req, res, next) => {
         if (err) {
             res.send(err);
         } else {
-            getPodcast(req.params.number, (body) => {
-                var parentDir = path.join(__dirname, "../");
-                var filename = 'wnp' + req.params.number + '.epub';
-                res.download(parentDir + '/' + filename, filename);
+            getPodcast(req.params.number, (err) => {
+                if (err) {
+                    res.send(err);
+                } else {
+                    var parentDir = path.join(__dirname, "../");
+                    var filename = 'wnp' + req.params.number + '.epub';
+                    res.download(parentDir + '/' + filename, filename);
+                }
             });
         }
     })
