@@ -54,7 +54,7 @@ router.get('/', function (req, res, next) {
 });
 
 router.get('/:number', (req, res, next) => {
-    validatePodcast(req.param.number, (err) => {
+    validatePodcast(req.params.number, (err) => {
         if (err) {
             res.send(err);
         } else {
