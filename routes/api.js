@@ -46,4 +46,12 @@ router.get('/', function (req, res, next) {
     });
 });
 
+router.get('/:number', (req, res, next) => {
+    getPodcast(req.params.number, (body) => {
+        var parentDir = path.join(__dirname, "../");
+        var filename = 'wnp' + req.params.number + '.epub';
+        res.sendFile(parentDir + '/' + filename);
+    });
+});
+
 module.exports = router;
