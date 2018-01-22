@@ -5,6 +5,7 @@ var select = require('soupselect').select;
 var html = require('htmlparser-to-html');
 var Epub = require("epub-gen");
 const path = require('path');
+var fs = require('fs');
 
 var router = express.Router();
 
@@ -54,7 +55,7 @@ var getPodcast = (number, cb) => {
     )
 };
 
-var validatePodcast = (number, cb) => {
+var validatePodcastNumber = (number, cb) => {
     const isValid = /^\d\d\d$/.test(number);
     if (isValid) {
         cb();
@@ -70,19 +71,27 @@ router.get('/', function (req, res, next) {
 });
 
 router.get('/:number', (req, res, next) => {
-    validatePodcast(req.params.number, (err) => {
+    validatePodcastNumber(req.params.number, (err) => {
         if (err) {
             res.send(err);
         } else {
-            getPodcast(req.params.number, (err) => {
-                if (err) {
-                    res.send(err);
+            const parentDir = path.join(__dirname, "../");
+            const filename = 'wnp' + req.params.number + '.epub';
+            const fullName = parentDir + '/' + filename;
+            fs.exists(fullName, (exists) => {
+                if(exists) {
+                    res.download(fullName, filename);
                 } else {
-                    var parentDir = path.join(__dirname, "../");
-                    var filename = 'wnp' + req.params.number + '.epub';
-                    res.download(parentDir + '/' + filename, filename);
+                    getPodcast(req.params.number, (err) => {
+                        if (err) {
+                            res.send(err);
+                        } else {
+                            res.download(fullName, filename);
+                        }
+                    });
                 }
-            });
+            })
+            
         }
     })
 });
