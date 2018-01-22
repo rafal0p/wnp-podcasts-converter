@@ -38,6 +38,15 @@ var getPodcast = (number, cb) => {
     )
 };
 
+var validatePodcast = (number, cb) => {
+    const isValid = /^\d\d\d$/.test(number);
+    if (isValid) {
+        cb();
+    } else {
+        cb({ err: 'invalid podcast number' });
+    }
+}
+
 router.get('/', function (req, res, next) {
     getPodcast('099', (body) => {
         res.json({ 'response': body });
@@ -45,11 +54,17 @@ router.get('/', function (req, res, next) {
 });
 
 router.get('/:number', (req, res, next) => {
-    getPodcast(req.params.number, (body) => {
-        var parentDir = path.join(__dirname, "../");
-        var filename = 'wnp' + req.params.number + '.epub';
-        res.download(parentDir + '/' + filename, filename);
-    });
+    validatePodcast(req.param.number, (err) => {
+        if (err) {
+            res.send(err);
+        } else {
+            getPodcast(req.params.number, (body) => {
+                var parentDir = path.join(__dirname, "../");
+                var filename = 'wnp' + req.params.number + '.epub';
+                res.download(parentDir + '/' + filename, filename);
+            });
+        }
+    })
 });
 
 module.exports = router;
