@@ -55,6 +55,22 @@ var getPodcast = (number, cb) => {
     )
 };
 
+var validatePodcastName = (name, cb) => {
+    if (!name.startsWith('wnp')) {
+        cb({ err: 'Invalid filename prefix.' });
+    } else if (
+        !name.endsWith('epub')
+        || name.endsWith('mobi')
+    ) {
+        cb({ err: 'Invalid filename extension.' });
+    } else if (/^wnp\d\d\d\d[.epub|.mobi]$/.test(name)) {
+        cb({ err: 'Invalid filename format.' });
+    } else {
+        const matched = /^wnp(\d\d\d)\.(.{4})$/.exec(name);
+        cb(null, matched[1], matched[2]);
+    }
+}
+
 var validatePodcastNumber = (number, cb) => {
     const isValid = /^\d\d\d$/.test(number);
     if (isValid) {
@@ -70,28 +86,33 @@ router.get('/', function (req, res, next) {
     });
 });
 
-router.get('/:number', (req, res, next) => {
-    validatePodcastNumber(req.params.number, (err) => {
+router.get('/:podcastName', (req, res, next) => {
+    validatePodcastName(req.params.podcastName, (err, number, extension) => {
         if (err) {
             res.send(err);
         } else {
-            const parentDir = path.join(__dirname, "../");
-            const filename = 'wnp' + req.params.number + '.epub';
-            const fullName = parentDir + '/' + filename;
-            fs.exists(fullName, (exists) => {
-                if(exists) {
-                    res.download(fullName, filename);
+            validatePodcastNumber(number, (err) => {
+                if (err) {
+                    res.send(err);
                 } else {
-                    getPodcast(req.params.number, (err) => {
-                        if (err) {
-                            res.send(err);
-                        } else {
+                    const parentDir = path.join(__dirname, "../");
+                    const filename = 'wnp' + number + '.epub';
+                    const fullName = parentDir + '/' + filename;
+                    fs.exists(fullName, (exists) => {
+                        if (exists) {
                             res.download(fullName, filename);
+                        } else {
+                            getPodcast(number, (err) => {
+                                if (err) {
+                                    res.send(err);
+                                } else {
+                                    res.download(fullName, filename);
+                                }
+                            });
                         }
-                    });
+                    })
                 }
             })
-            
         }
     })
 });
