@@ -31,11 +31,9 @@ var getPodcast = (number, cb) => {
             }, "./wnp" + number + ".epub");
             epub.promise.then(() => {
                 cb(pressreleaseHtml);
-            },
-            (err) => {
+            }, (err) => {
                 console.log(err);
-            }
-        )
+            })
         }
     )
 };
@@ -50,7 +48,7 @@ router.get('/:number', (req, res, next) => {
     getPodcast(req.params.number, (body) => {
         var parentDir = path.join(__dirname, "../");
         var filename = 'wnp' + req.params.number + '.epub';
-        res.sendFile(parentDir + '/' + filename);
+        res.download(parentDir + '/' + filename, filename);
     });
 });
 
