@@ -8,35 +8,47 @@ const path = require('path');
 
 var router = express.Router();
 
+var getPressRelease = (body) => {
+    const handler = new htmlparser.DefaultHandler();
+    const parser = new htmlparser.Parser(handler);
+    parser.parseComplete(body);
+    return select(handler.dom, 'div.pressrelease-content');
+}
+
 var getPodcast = (number, cb) => {
     request(
         'http://jakoszczedzacpieniadze.pl/' + number,
         (err, res, body) => {
-            var handler = new htmlparser.DefaultHandler();
-            var parser = new htmlparser.Parser(handler);
-            parser.parseComplete(body);
-            var pressrelease = select(handler.dom, 'div.pressrelease-content');
-            if (pressrelease.length == 0) {
-                cb({ err: 'No pressrelease.' });
+            if (err) {
+                cb(err);
             } else {
-                pressrelease[0].attribs.style = ""; // remove display: none
-                var pressreleaseHtml = html(pressrelease)
-                    .replace(/&nbsp;/g, " ");
-                var epub = new Epub({
-                    title: "WNP " + number,
-                    author: "Michał Szafrański",
-                    content: [
-                        {
-                            title: "Treść podcastu",
-                            data: pressreleaseHtml
-                        }
-                    ]
-                }, "./wnp" + number + ".epub");
-                epub.promise.then(() => {
-                    cb(null);
-                }, (err) => {
-                    console.log(err);
-                })
+                if (res.statusCode == 404) {
+                    cb({ err: 'No such podcast yet.' });
+                } else {
+                    var pressrelease = getPressRelease(body);
+                    if (pressrelease.length == 0) {
+                        cb({ err: 'No pressrelease.' });
+                    } else {
+                        pressrelease[0].attribs.style = ""; // remove display: none
+                        var pressreleaseHtml = html(pressrelease)
+                            .replace(/&nbsp;/g, " ");
+                        var epub = new Epub({
+                            title: "WNP " + number,
+                            author: "Michał Szafrański",
+                            content: [
+                                {
+                                    title: "Treść podcastu",
+                                    data: pressreleaseHtml
+                                }
+                            ]
+                        }, "./wnp" + number + ".epub");
+                        epub.promise.then(() => {
+                            cb(null);
+                        }, (err) => {
+                            cb(err);
+                        })
+                    }
+                }
             }
         }
     )
