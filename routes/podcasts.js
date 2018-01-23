@@ -104,12 +104,6 @@ var validatePodcastNumber = (number, cb) => {
     }
 }
 
-router.get('/', function (req, res, next) {
-    getPodcast('099', (body) => {
-        res.json({ 'response': body });
-    });
-});
-
 router.get('/:podcastName', (req, res, next) => {
     validatePodcastName(req.params.podcastName, (err, number, extension) => {
         if (err) {
