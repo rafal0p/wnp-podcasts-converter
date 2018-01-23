@@ -5,7 +5,8 @@ var select = require('soupselect').select;
 var html = require('htmlparser-to-html');
 var Epub = require("epub-gen");
 const path = require('path');
-var fs = require('fs');
+const kindlegen = require('kindlegen');
+const fs = require('fs');
 
 var router = express.Router();
 
@@ -16,7 +17,26 @@ var getPressRelease = (body) => {
     return select(handler.dom, 'div.pressrelease-content');
 }
 
-var getPodcast = (number, cb) => {
+var createMobi = (number, cb) => {
+    const parentDir = path.join(__dirname, "../");
+    const epubFileName = 'wnp' + number + '.epub';
+    const epubFullName = parentDir + '/' + epubFileName;
+    fs.readFile(epubFullName, (err, data) => {
+        kindlegen(data, (err, buff) => {
+            const mobiFileName = 'wnp' + number + '.mobi';
+            const mobiFullName = parentDir + '/' + mobiFileName;
+            fs.writeFile(mobiFileName, buff, (err) => {
+                if (err) {
+                    cb(err);
+                } else {
+                    cb(null);
+                }
+            });
+        });
+    });
+}
+
+var getPodcast = (number, isMobi, cb) => {
     request(
         'http://jakoszczedzacpieniadze.pl/' + number,
         (err, res, body) => {
@@ -44,7 +64,11 @@ var getPodcast = (number, cb) => {
                             ]
                         }, "./wnp" + number + ".epub");
                         epub.promise.then(() => {
-                            cb(null);
+                            if (isMobi) {
+                                createMobi(number, cb);
+                            } else {
+                                cb(null);
+                            }
                         }, (err) => {
                             cb(err);
                         })
@@ -59,8 +83,8 @@ var validatePodcastName = (name, cb) => {
     if (!name.startsWith('wnp')) {
         cb({ err: 'Invalid filename prefix.' });
     } else if (
-        !name.endsWith('epub')
-        || name.endsWith('mobi')
+        !(name.endsWith('epub')
+            || name.endsWith('mobi'))
     ) {
         cb({ err: 'Invalid filename extension.' });
     } else if (/^wnp\d\d\d\d[.epub|.mobi]$/.test(name)) {
@@ -96,13 +120,14 @@ router.get('/:podcastName', (req, res, next) => {
                     res.send(err);
                 } else {
                     const parentDir = path.join(__dirname, "../");
-                    const filename = 'wnp' + number + '.epub';
+                    const filename = req.params.podcastName;
                     const fullName = parentDir + '/' + filename;
-                    fs.exists(fullName, (exists) => {
-                        if (exists) {
+                    fs.exists(fullName, (fileExists) => {
+                        if (fileExists) {
                             res.download(fullName, filename);
                         } else {
-                            getPodcast(number, (err) => {
+                            const isMobi = extension === 'mobi';
+                            getPodcast(number, isMobi, (err) => {
                                 if (err) {
                                     res.send(err);
                                 } else {
