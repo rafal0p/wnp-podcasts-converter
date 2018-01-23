@@ -2,4 +2,10 @@ extends layout
 
 block content
   h1= title
-  p Welcome to #{title}
+  p Na tej stronie możesz znaleźć w formacie epub oraz mobi te podcasty Michała Szafrańskiego, których treść można rozwinąć na jego blogu.
+  p Do konkretnego podcastu możesz się dostać wklejając w pasek przeglądarki poniższy adres, oraz zmieniajac w nim numer podcastu:
+  p(id='adr')
+
+  script.
+    document.getElementById('adr').innerHTML = 
+      'https://' + document.location.hostname + '/podcasts/wnp099.epub';
